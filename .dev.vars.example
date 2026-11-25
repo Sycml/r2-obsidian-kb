@@ -1,0 +1,6 @@
+# 本地开发环境变量示例（复制为 .dev.vars 后生效，.dev.vars 不会提交到 Git）
+# 生产环境请使用:
+#   npx wrangler secret put ACCESS_PASSWORD
+#   npx wrangler secret put SESSION_SECRET
+ACCESS_PASSWORD=demo-notes-password
+SESSION_SECRET=replace-with-at-least-32-random-characters-for-local-dev

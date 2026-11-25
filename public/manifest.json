@@ -1,0 +1,17 @@
+{
+  "name": "R2 Obsidian 知识库",
+  "short_name": "知识库",
+  "description": "基于 Cloudflare R2 的私人 Obsidian 知识库",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf8f5",
+  "theme_color": "#6d4aff",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

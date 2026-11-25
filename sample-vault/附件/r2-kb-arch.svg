@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" fill="none">
+  <rect width="720" height="260" rx="16" fill="#F8F7FC"/>
+  <rect x="30" y="75" width="165" height="110" rx="12" fill="#FFFFFF" stroke="#6B4EFF" stroke-width="2"/>
+  <text x="112" y="122" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="#1F2328">手机 / 平板 / 电脑</text>
+  <text x="112" y="148" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#57606A">响应式 Web / PWA</text>
+
+  <rect x="275" y="75" width="175" height="110" rx="12" fill="#6B4EFF"/>
+  <text x="362" y="122" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="#FFFFFF">Cloudflare Workers</text>
+  <text x="362" y="148" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#EAE4FF">鉴权 + Static Assets</text>
+
+  <rect x="528" y="75" width="162" height="110" rx="12" fill="#FFFFFF" stroke="#00A884" stroke-width="2"/>
+  <text x="609" y="122" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="#1F2328">Cloudflare R2</text>
+  <text x="609" y="148" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#57606A">私有 Obsidian 笔记库</text>
+
+  <path d="M195 130H267" stroke="#6B4EFF" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M260 123L269 130L260 137" stroke="#6B4EFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <path d="M450 130H520" stroke="#00A884" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M513 123L522 130L513 137" stroke="#00A884" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <text x="360" y="38" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="600" fill="#57606A">实时动态读取 · 零公网暴露 · 跨端同步查阅</text>
+</svg>
