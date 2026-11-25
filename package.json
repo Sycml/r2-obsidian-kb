@@ -9,6 +9,7 @@
     "build": "vite build",
     "preview": "npm run build && wrangler dev --port 8787",
     "deploy": "npm run build && wrangler deploy",
+    "deploy:ci": "node scripts/deploy-ci.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.worker.json",
     "test": "vitest run",
     "test:watch": "vitest",

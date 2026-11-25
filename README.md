@@ -23,42 +23,40 @@
 
 ## 快速部署到你的 Cloudflare 账号
 
-### 1. 修改存储桶名称
+### 方式一：Git 自动部署（推荐，桶名与路径不进仓库，可放心开源）
 
-打开 `wrangler.jsonc`，将 `bucket_name` 改为你现有的 Cloudflare R2 存储桶名称：
+无需修改仓库里的 `wrangler.jsonc`（保留占位名即可），所有敏感资源名通过 Cloudflare 控制台环境变量动态注入：
 
-```jsonc
-  "r2_buckets": [
-    {
-      "binding": "NOTES_BUCKET",
-      "bucket_name": "你的R2存储桶名称"
-    }
-  ],
-  "vars": {
-    "AUTH_MODE": "password",
-    // 如果你的 Obsidian 笔记在桶内子目录下（例如 notes/），填写 "notes/"；根目录留空即可
-    "VAULT_PREFIX": "",
-    "SITE_TITLE": "我的知识库"
-  }
-```
+1. 在 Cloudflare Dashboard 进入 **Workers & Pages → Create → Import a repository**，选择你的 GitHub 仓库。
+2. 填写构建与部署命令：
+   - **Build command**：`npm run build`
+   - **Deploy command**：`npm run deploy:ci`
+3. 在 **Build variables（构建环境变量，建议勾选加密为 Secret）** 中添加：
+   - `R2_BUCKET_NAME`：**必填**，你的真实 Cloudflare R2 存储桶名称
+   - `VAULT_PREFIX`：可选，若笔记存放在桶内子目录（例如 `obsidian/`），在此填写；根目录可不填
+   - `SITE_TITLE`：可选，自定义知识库标题（默认 `我的知识库`）
+4. 点击 **Save and Deploy** 完成首次发布。
+5. 发布完成后进入该 Worker → **Settings → Variables and Secrets → Add**，添加类型为 **Secret** 的运行时密钥：
+   - `ACCESS_PASSWORD`：**必填**，你的私密登录口令
+   - `SESSION_SECRET`：可选（建议 32 位以上随机字符串，用于 Cookie 签名）
 
-### 2. 登录 Cloudflare 并设置私密口令
+> 说明：`npm run deploy:ci` 会在 Cloudflare 临时构建容器内生成临时的 `.wrangler.deploy.json` 完成部署并立刻删除，真实的 R2 桶名与子目录永远不会写入 Git 仓库或提交历史。
+
+### 方式二：本地 CLI 一键部署
+
+如果你希望从本机终端直接部署，同样可以不修改 `wrangler.jsonc`，直接通过环境变量传入：
 
 ```bash
 npm install
 npx wrangler login
 
-# 设置登录口令（安全保存在 Cloudflare Secrets，不会出现在代码仓库中）
+# 1. 设置私密登录口令（安全保存在 Cloudflare Secrets）
 npx wrangler secret put ACCESS_PASSWORD
-
-# 可选：设置独立的 Cookie 签名密钥（建议 32 位以上随机字符串）
 npx wrangler secret put SESSION_SECRET
-```
 
-### 3. 一键构建并发布
-
-```bash
-npm run deploy
+# 2. 构建并动态注入 R2 桶名与子目录（根目录可省略 VAULT_PREFIX）
+npm run build
+R2_BUCKET_NAME=你的R2存储桶名称 VAULT_PREFIX=notes/ npm run deploy:ci
 ```
 
 部署完成后，终端会输出你的访问网址（如 `https://r2-obsidian-kb.<你的子域>.workers.dev`）。你也可以在 Cloudflare Dashboard → **Workers & Pages** → 对应 Worker → **Settings → Domains & Routes** 中绑定自定义域名（例如 `notes.yourdomain.com`）。

@@ -3,6 +3,7 @@
   "name": "r2-obsidian-kb",
   "main": "worker/index.ts",
   "compatibility_date": "2025-04-01",
+  "keep_vars": true,
   "assets": {
     "directory": "./dist/client",
     "binding": "ASSETS",
