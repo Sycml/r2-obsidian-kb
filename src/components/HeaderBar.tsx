@@ -1,5 +1,4 @@
 import {
-  BookOpen,
   ListTree,
   LogOut,
   Menu,
@@ -64,7 +63,13 @@ export function HeaderBar({
         </button>
 
         <button type="button" className="brand-btn" onClick={onGoHome} title={siteTitle}>
-          <BookOpen size={18} className="brand-icon" />
+          <img
+            src="/icon-192.png"
+            alt=""
+            className="brand-icon"
+            width={24}
+            height={24}
+          />
           <span className="brand-title">{siteTitle}</span>
         </button>
 
