@@ -9,13 +9,17 @@ import {
 import { HeaderBar } from "./components/HeaderBar";
 import { LoginScreen } from "./components/LoginScreen";
 import { NoteView } from "./components/NoteView";
+import { ReadingHeatmapModal } from "./components/ReadingHeatmapModal";
 import { Sidebar } from "./components/Sidebar";
 import { TocPanel } from "./components/TocPanel";
+import { useReadingTracker } from "./hooks/useReadingTracker";
 import { renderObsidianNote } from "./lib/obsidian";
+import { formatLocalDateKey, getNoteReadingSeconds } from "./lib/readingStats";
 import {
   applyThemePreference,
-  cycleThemePreference,
+  getSavedAccentPreference,
   getSavedThemePreference,
+  type AccentPreference,
   type ThemePreference,
 } from "./lib/theme";
 import type { AuthStatus, NoteResponse, TreeNode, VaultTreeResponse } from "./types";
@@ -74,18 +78,20 @@ export function App() {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [mobileTocOpen, setMobileTocOpen] = useState(false);
+  const [heatmapOpen, setHeatmapOpen] = useState(false);
 
   const [themePref, setThemePref] = useState<ThemePreference>(() => getSavedThemePreference());
+  const [accentPref, setAccentPref] = useState<AccentPreference>(() => getSavedAccentPreference());
 
-  // Sync theme preference & system theme listener
+  // Sync theme preference, accent color & system theme listener
   useEffect(() => {
-    applyThemePreference(themePref);
+    applyThemePreference(themePref, accentPref);
     if (themePref !== "system" || !window.matchMedia) return;
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const listener = () => applyThemePreference("system");
+    const listener = () => applyThemePreference("system", accentPref);
     mql.addEventListener("change", listener);
     return () => mql.removeEventListener("change", listener);
-  }, [themePref]);
+  }, [themePref, accentPref]);
 
   // Check authentication status
   const checkAuth = useCallback(async () => {
@@ -183,6 +189,18 @@ export function App() {
     return renderObsidianNote(note.content, note.key, vault.files);
   }, [note, vault]);
 
+  // Real-time active reading duration tracker (persisted to R2 + localStorage cache)
+  const {
+    stats: readingStats,
+    syncStatus: readingSyncStatus,
+    isActivelyReading,
+    refreshStats,
+  } = useReadingTracker({
+    authenticated: Boolean(authStatus?.authenticated),
+    activeNoteKey,
+    noteReady: Boolean(note && parsedNote && !noteError),
+  });
+
   // Scroll to heading or top after note renders
   useEffect(() => {
     if (!parsedNote || !note) return;
@@ -227,10 +245,11 @@ export function App() {
   };
 
   const handleRefresh = async () => {
-    await loadVault();
-    if (activeNoteKey) {
-      await loadNote(activeNoteKey);
-    }
+    await Promise.all([
+      loadVault(),
+      activeNoteKey ? loadNote(activeNoteKey) : Promise.resolve(),
+      refreshStats(),
+    ]);
   };
 
   const handleLogout = async () => {
@@ -265,6 +284,10 @@ export function App() {
     parsedNote?.frontmatter.title ||
     (activeNoteKey ? activeNoteKey.split("/").pop()?.replace(/\.md$/i, "") || "" : "");
 
+  const todayKey = formatLocalDateKey(new Date());
+  const todayReadingSeconds = readingStats.days[todayKey]?.seconds || 0;
+  const currentNoteReading = getNoteReadingSeconds(readingStats, activeNoteKey);
+
   return (
     <div className="app-shell">
       <HeaderBar
@@ -274,14 +297,23 @@ export function App() {
         refreshing={refreshing}
         authMode={authStatus.authMode}
         themePref={themePref}
+        accentPref={accentPref}
+        todayReadingSeconds={todayReadingSeconds}
+        isActivelyReading={isActivelyReading}
         sidebarOpen={mobileSidebarOpen || !desktopCollapsed}
         onToggleSidebar={handleToggleSidebar}
         onOpenTocSheet={() => {
           setMobileTocOpen(true);
           setMobileSidebarOpen(false);
         }}
+        onOpenHeatmap={() => {
+          setHeatmapOpen(true);
+          setMobileSidebarOpen(false);
+          setMobileTocOpen(false);
+        }}
         onRefresh={handleRefresh}
-        onCycleTheme={() => setThemePref((prev) => cycleThemePreference(prev))}
+        onChangeTheme={setThemePref}
+        onChangeAccent={setAccentPref}
         onLogout={handleLogout}
         onGoHome={() => {
           const homeKey = pickInitialNoteKey(orderedNotes);
@@ -306,8 +338,14 @@ export function App() {
           activeNoteKey={activeNoteKey}
           desktopCollapsed={desktopCollapsed}
           mobileOpen={mobileSidebarOpen}
+          readingStats={readingStats}
+          isActivelyReading={isActivelyReading}
           onSelectNote={(key) => navigateToNote(key)}
           onCloseMobile={() => setMobileSidebarOpen(false)}
+          onOpenHeatmap={() => {
+            setHeatmapOpen(true);
+            setMobileSidebarOpen(false);
+          }}
         />
 
         <main className="main-content">
@@ -316,9 +354,11 @@ export function App() {
             parsed={parsedNote}
             loading={noteLoading}
             error={noteError}
+            noteReadingSeconds={currentNoteReading.totalSeconds}
             prevNote={prevNote}
             nextNote={nextNote}
             onNavigateNote={navigateToNote}
+            onOpenHeatmap={() => setHeatmapOpen(true)}
           />
         </main>
 
@@ -328,6 +368,14 @@ export function App() {
           onCloseMobile={() => setMobileTocOpen(false)}
         />
       </div>
+
+      <ReadingHeatmapModal
+        open={heatmapOpen}
+        stats={readingStats}
+        syncStatus={readingSyncStatus}
+        onClose={() => setHeatmapOpen(false)}
+        onNavigateNote={(key) => navigateToNote(key)}
+      />
     </div>
   );
 }

@@ -64,3 +64,23 @@ export interface ParsedObsidianNote {
   toc: TocItem[];
   inlineTags: string[];
 }
+
+export interface DailyReadingRecord {
+  seconds: number;
+  notes?: Record<string, number>;
+}
+
+export interface ReadingStatsData {
+  version: 1;
+  updatedAt: string;
+  days: Record<string, DailyReadingRecord>;
+}
+
+export interface ReadingDelta {
+  date: string;
+  seconds: number;
+  noteKey?: string;
+}
+
+export type ReadingSyncStatus = "synced" | "syncing" | "local";
+

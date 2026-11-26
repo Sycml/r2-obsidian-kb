@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, FileText, Folder, FolderOpen, Search, X } from "lucide-react";
-import type { TreeNode } from "../types";
+import type { ReadingStatsData, TreeNode } from "../types";
+import { MiniReadingHeatmap } from "./MiniReadingHeatmap";
 
 interface SidebarProps {
   tree: TreeNode[];
@@ -8,8 +9,11 @@ interface SidebarProps {
   activeNoteKey: string | null;
   desktopCollapsed: boolean;
   mobileOpen: boolean;
+  readingStats: ReadingStatsData;
+  isActivelyReading: boolean;
   onSelectNote: (key: string) => void;
   onCloseMobile: () => void;
+  onOpenHeatmap: () => void;
 }
 
 function collectFolderPaths(nodes: TreeNode[]): string[] {
@@ -63,8 +67,11 @@ export function Sidebar({
   activeNoteKey,
   desktopCollapsed,
   mobileOpen,
+  readingStats,
+  isActivelyReading,
   onSelectNote,
   onCloseMobile,
+  onOpenHeatmap,
 }: SidebarProps) {
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
@@ -226,6 +233,12 @@ export function Sidebar({
           </div>
         )}
       </nav>
+
+      <MiniReadingHeatmap
+        stats={readingStats}
+        isActivelyReading={isActivelyReading}
+        onOpenFullModal={onOpenHeatmap}
+      />
     </aside>
   );
 }

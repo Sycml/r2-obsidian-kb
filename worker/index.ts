@@ -16,6 +16,12 @@ import {
   normalizeSafeRelativeKey,
   resolveR2Key,
 } from "./r2";
+import {
+  applyReadingDeltas,
+  loadReadingStatsFromR2,
+  sanitizeReadingDeltas,
+  saveReadingStatsToR2,
+} from "./readingStats";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -96,6 +102,7 @@ app.post("/api/auth/logout", (c) => {
 app.use("/api/tree", authMiddleware);
 app.use("/api/note", authMiddleware);
 app.use("/api/asset", authMiddleware);
+app.use("/api/reading-stats", authMiddleware);
 
 // Vault directory tree & flat index
 app.get("/api/tree", async (c) => {
@@ -219,6 +226,41 @@ app.get("/api/asset", async (c) => {
 
   headers.set("Content-Length", String(obj.size));
   return new Response(obj.body, { status: 200, headers });
+});
+
+// Read persisted reading duration statistics from R2
+app.get("/api/reading-stats", async (c) => {
+  const stats = await loadReadingStatsFromR2(c.env.NOTES_BUCKET, c.env.VAULT_PREFIX);
+  return c.json(stats, 200, {
+    "Cache-Control": "private, no-store",
+  });
+});
+
+// Merge incremental reading duration deltas into R2 (supports fetch JSON and sendBeacon)
+app.post("/api/reading-stats", async (c) => {
+  let payload: { deltas?: unknown };
+  try {
+    const rawText = await c.req.text();
+    payload = JSON.parse(rawText) as { deltas?: unknown };
+  } catch {
+    return c.json({ error: "无效的阅读记录请求体。" }, 400);
+  }
+
+  const deltas = sanitizeReadingDeltas(payload?.deltas);
+  const current = await loadReadingStatsFromR2(c.env.NOTES_BUCKET, c.env.VAULT_PREFIX);
+
+  if (deltas.length === 0) {
+    return c.json(current, 200, {
+      "Cache-Control": "private, no-store",
+    });
+  }
+
+  const updated = applyReadingDeltas(current, deltas);
+  await saveReadingStatsToR2(c.env.NOTES_BUCKET, updated, c.env.VAULT_PREFIX);
+
+  return c.json(updated, 200, {
+    "Cache-Control": "private, no-store",
+  });
 });
 
 // Fallback for non-API requests if routed to Worker

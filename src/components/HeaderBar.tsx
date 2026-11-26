@@ -1,15 +1,15 @@
 import {
+  Flame,
   ListTree,
   LogOut,
   Menu,
-  Monitor,
-  Moon,
   PanelLeft,
   RefreshCw,
-  Sun,
 } from "lucide-react";
 import type { AuthMode } from "../types";
-import type { ThemePreference } from "../lib/theme";
+import type { AccentPreference, ThemePreference } from "../lib/theme";
+import { formatCompactDuration, formatDuration } from "../lib/readingStats";
+import { AppearancePopover } from "./AppearancePopover";
 
 interface HeaderBarProps {
   siteTitle: string;
@@ -18,20 +18,19 @@ interface HeaderBarProps {
   refreshing: boolean;
   authMode: AuthMode;
   themePref: ThemePreference;
+  accentPref: AccentPreference;
+  todayReadingSeconds: number;
+  isActivelyReading: boolean;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   onOpenTocSheet: () => void;
+  onOpenHeatmap: () => void;
   onRefresh: () => void;
-  onCycleTheme: () => void;
+  onChangeTheme: (pref: ThemePreference) => void;
+  onChangeAccent: (accent: AccentPreference) => void;
   onLogout: () => void;
   onGoHome: () => void;
 }
-
-const THEME_TITLE: Record<ThemePreference, string> = {
-  system: "主题：跟随系统（点击切换）",
-  light: "主题：浅色模式（点击切换）",
-  dark: "主题：深色模式（点击切换）",
-};
 
 export function HeaderBar({
   siteTitle,
@@ -40,14 +39,24 @@ export function HeaderBar({
   refreshing,
   authMode,
   themePref,
+  accentPref,
+  todayReadingSeconds,
+  isActivelyReading,
   sidebarOpen,
   onToggleSidebar,
   onOpenTocSheet,
+  onOpenHeatmap,
   onRefresh,
-  onCycleTheme,
+  onChangeTheme,
+  onChangeAccent,
   onLogout,
   onGoHome,
 }: HeaderBarProps) {
+  const heatmapTitle =
+    todayReadingSeconds > 0
+      ? `阅读时长热力图（今日已读 ${formatDuration(todayReadingSeconds)}）`
+      : "阅读时长热力图";
+
   return (
     <header className="header-bar">
       <div className="header-left">
@@ -95,6 +104,27 @@ export function HeaderBar({
 
         <button
           type="button"
+          className={`header-reading-btn ${todayReadingSeconds > 0 ? "has-progress" : ""}`}
+          onClick={onOpenHeatmap}
+          title={heatmapTitle}
+          aria-label={heatmapTitle}
+        >
+          <Flame size={17} className="reading-flame-icon" />
+          <span className="header-reading-time">
+            {todayReadingSeconds > 0 ? formatCompactDuration(todayReadingSeconds) : "热力图"}
+          </span>
+          {isActivelyReading && <span className="reading-live-dot" aria-hidden="true" />}
+        </button>
+
+        <AppearancePopover
+          themePref={themePref}
+          accentPref={accentPref}
+          onChangeTheme={onChangeTheme}
+          onChangeAccent={onChangeAccent}
+        />
+
+        <button
+          type="button"
           className="icon-btn"
           onClick={onRefresh}
           disabled={refreshing}
@@ -102,18 +132,6 @@ export function HeaderBar({
           aria-label="刷新目录"
         >
           <RefreshCw size={18} className={refreshing ? "spin" : ""} />
-        </button>
-
-        <button
-          type="button"
-          className="icon-btn"
-          onClick={onCycleTheme}
-          title={THEME_TITLE[themePref]}
-          aria-label={THEME_TITLE[themePref]}
-        >
-          {themePref === "light" && <Sun size={18} />}
-          {themePref === "dark" && <Moon size={18} />}
-          {themePref === "system" && <Monitor size={18} />}
         </button>
 
         {authMode === "password" && (

@@ -21,6 +21,7 @@ describe("worker/r2 utilities", () => {
     expect(normalizeSafeRelativeKey("/etc/passwd")).toBeNull();
     expect(normalizeSafeRelativeKey("a\\b.md")).toBeNull();
     expect(normalizeSafeRelativeKey(".obsidian/workspace.json")).toBeNull();
+    expect(normalizeSafeRelativeKey(".r2-kb-data/reading-stats.json")).toBeNull();
     expect(normalizeSafeRelativeKey("notes/.trash/old.md")).toBeNull();
     expect(normalizeSafeRelativeKey("notes/hello\0.md")).toBeNull();
     expect(normalizeSafeRelativeKey("技术笔记/Cloudflare R2.md")).toBe("技术笔记/Cloudflare R2.md");

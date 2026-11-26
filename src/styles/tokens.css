@@ -23,8 +23,17 @@
 
   --accent: #6b4eff;
   --accent-hover: #5638eb;
+  --accent-ring: rgba(107, 78, 255, 0.2);
+  --accent-soft: rgba(107, 78, 255, 0.08);
   --danger: #d93848;
   --danger-bg: rgba(217, 56, 72, 0.09);
+
+  /* Reading duration heatmap scale (light) */
+  --heatmap-0: #eae7df;
+  --heatmap-1: #cbc2ea;
+  --heatmap-2: #ac9de0;
+  --heatmap-3: #8c76f0;
+  --heatmap-4: #6b4eff;
 
   --shadow-sm: 0 1px 2px rgba(15, 18, 24, 0.05);
   --shadow-md: 0 8px 24px rgba(15, 18, 24, 0.08);
@@ -76,8 +85,17 @@
 
   --accent: #8c72ff;
   --accent-hover: #7c5fff;
+  --accent-ring: rgba(140, 114, 255, 0.28);
+  --accent-soft: rgba(140, 114, 255, 0.11);
   --danger: #f87171;
   --danger-bg: rgba(248, 113, 113, 0.14);
+
+  /* Reading duration heatmap scale (dark) */
+  --heatmap-0: #222630;
+  --heatmap-1: #3c3861;
+  --heatmap-2: #574c94;
+  --heatmap-3: #725fca;
+  --heatmap-4: #8c72ff;
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
