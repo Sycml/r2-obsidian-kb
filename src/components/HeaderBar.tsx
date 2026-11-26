@@ -6,7 +6,7 @@ import {
   PanelLeft,
   RefreshCw,
 } from "lucide-react";
-import type { AuthMode } from "../types";
+import type { AuthMode, ReadingSyncStatus } from "../types";
 import type { AccentPreference, ThemePreference } from "../lib/theme";
 import { formatCompactDuration, formatDuration } from "../lib/readingStats";
 import { AppearancePopover } from "./AppearancePopover";
@@ -19,6 +19,7 @@ interface HeaderBarProps {
   authMode: AuthMode;
   themePref: ThemePreference;
   accentPref: AccentPreference;
+  accentSyncStatus: ReadingSyncStatus;
   todayReadingSeconds: number;
   isActivelyReading: boolean;
   sidebarOpen: boolean;
@@ -40,6 +41,7 @@ export function HeaderBar({
   authMode,
   themePref,
   accentPref,
+  accentSyncStatus,
   todayReadingSeconds,
   isActivelyReading,
   sidebarOpen,
@@ -119,6 +121,7 @@ export function HeaderBar({
         <AppearancePopover
           themePref={themePref}
           accentPref={accentPref}
+          accentSyncStatus={accentSyncStatus}
           onChangeTheme={onChangeTheme}
           onChangeAccent={onChangeAccent}
         />

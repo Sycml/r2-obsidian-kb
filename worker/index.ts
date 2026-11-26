@@ -17,6 +17,11 @@ import {
   resolveR2Key,
 } from "./r2";
 import {
+  loadPreferencesFromR2,
+  normalizeAccentValue,
+  savePreferencesToR2,
+} from "./preferences";
+import {
   applyReadingDeltas,
   loadReadingStatsFromR2,
   sanitizeReadingDeltas,
@@ -103,6 +108,7 @@ app.use("/api/tree", authMiddleware);
 app.use("/api/note", authMiddleware);
 app.use("/api/asset", authMiddleware);
 app.use("/api/reading-stats", authMiddleware);
+app.use("/api/preferences", authMiddleware);
 
 // Vault directory tree & flat index
 app.get("/api/tree", async (c) => {
@@ -259,6 +265,39 @@ app.post("/api/reading-stats", async (c) => {
   await saveReadingStatsToR2(c.env.NOTES_BUCKET, updated, c.env.VAULT_PREFIX);
 
   return c.json(updated, 200, {
+    "Cache-Control": "private, no-store",
+  });
+});
+
+// Read synced user preferences (theme accent color) from R2
+app.get("/api/preferences", async (c) => {
+  const prefs = await loadPreferencesFromR2(c.env.NOTES_BUCKET, c.env.VAULT_PREFIX);
+  return c.json(prefs, 200, {
+    "Cache-Control": "private, no-store",
+  });
+});
+
+// Persist synced user preferences (theme accent color) into R2
+app.put("/api/preferences", async (c) => {
+  let payload: { accent?: unknown };
+  try {
+    payload = await c.req.json<{ accent?: unknown }>();
+  } catch {
+    return c.json({ error: "无效的偏好设置请求体。" }, 400);
+  }
+
+  const normalizedAccent = normalizeAccentValue(payload?.accent);
+  if (!normalizedAccent) {
+    return c.json({ error: "无效的主题色值。" }, 400);
+  }
+
+  const saved = await savePreferencesToR2(
+    c.env.NOTES_BUCKET,
+    normalizedAccent,
+    c.env.VAULT_PREFIX
+  );
+
+  return c.json(saved, 200, {
     "Cache-Control": "private, no-store",
   });
 });

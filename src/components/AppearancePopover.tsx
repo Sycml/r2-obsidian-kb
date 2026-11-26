@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Monitor, Moon, Palette, RotateCcw, Sun } from "lucide-react";
+import {
+  Check,
+  Cloud,
+  CloudOff,
+  Monitor,
+  Moon,
+  Palette,
+  RefreshCw,
+  RotateCcw,
+  Sun,
+} from "lucide-react";
 import {
   ACCENT_PRESETS,
   DEFAULT_ACCENT_ID,
@@ -9,10 +19,12 @@ import {
   type AccentPreference,
   type ThemePreference,
 } from "../lib/theme";
+import type { ReadingSyncStatus } from "../types";
 
 interface AppearancePopoverProps {
   themePref: ThemePreference;
   accentPref: AccentPreference;
+  accentSyncStatus: ReadingSyncStatus;
   onChangeTheme: (pref: ThemePreference) => void;
   onChangeAccent: (accent: AccentPreference) => void;
 }
@@ -30,6 +42,7 @@ const MODE_OPTIONS: Array<{
 export function AppearancePopover({
   themePref,
   accentPref,
+  accentSyncStatus,
   onChangeTheme,
   onChangeAccent,
 }: AppearancePopoverProps) {
@@ -199,6 +212,27 @@ export function AppearancePopover({
                 aria-label="自定义十六进制色值"
               />
             </div>
+          </div>
+
+          <div className="popover-sync-footer">
+            {accentSyncStatus === "synced" && (
+              <>
+                <Cloud size={12} />
+                <span>主题色已同步至 R2（多端一致）</span>
+              </>
+            )}
+            {accentSyncStatus === "syncing" && (
+              <>
+                <RefreshCw size={12} className="spin" />
+                <span>正在同步主题色至 R2...</span>
+              </>
+            )}
+            {accentSyncStatus === "local" && (
+              <>
+                <CloudOff size={12} />
+                <span>已缓存在本地，恢复连接后自动同步</span>
+              </>
+            )}
           </div>
         </div>
       )}

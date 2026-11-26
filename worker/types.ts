@@ -59,3 +59,10 @@ export interface ReadingDelta {
   noteKey?: string;
 }
 
+export interface UserPreferencesData {
+  version: 1;
+  updatedAt: string | null;
+  accent: string;
+}
+
+
