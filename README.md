@@ -33,6 +33,7 @@
 2. 填写构建与部署命令：
    - **Build command**：`npm run build`
    - **Deploy command**：`npm run deploy:ci`
+   - **Non-production branch deploy command**（可选，用于 PR 预览部署）：`npm run deploy:ci:preview`
 3. 在 **Build variables（构建环境变量，建议勾选加密为 Secret）** 中添加：
    - `R2_BUCKET_NAME`：**必填**，你的真实 Cloudflare R2 存储桶名称
    - `VAULT_PREFIX`：可选，若笔记存放在桶内子目录（例如 `obsidian/`），在此填写；根目录可不填

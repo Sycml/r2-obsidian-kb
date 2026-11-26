@@ -63,7 +63,14 @@ for (const key of optionalEnvVars) {
   }
 }
 
-const extraArgs = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const isPreview = rawArgs.includes("--preview");
+const extraArgs = rawArgs.filter((arg) => arg !== "--preview");
+const wranglerCommand = isPreview ? ["versions", "upload"] : ["deploy"];
+
+if (isPreview) {
+  console.log("[deploy:ci] Preview 模式：将使用 wrangler versions upload 上传预览版本。");
+}
 
 fs.writeFileSync(tempConfigPath, `${JSON.stringify(config, null, 2)}\n`, "utf-8");
 
@@ -71,7 +78,7 @@ let exitCode = 1;
 try {
   const result = spawnSync(
     "npx",
-    ["wrangler", "deploy", "--config", tempConfigPath, ...extraArgs],
+    ["wrangler", ...wranglerCommand, "--config", tempConfigPath, ...extraArgs],
     {
       cwd: projectRoot,
       stdio: "inherit",
