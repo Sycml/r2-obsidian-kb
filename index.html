@@ -27,6 +27,16 @@
                 : "light"
               : saved;
           document.documentElement.dataset.theme = resolved;
+          var rawAccentVars = localStorage.getItem("r2-kb-accent-vars");
+          if (rawAccentVars) {
+            var parsed = JSON.parse(rawAccentVars);
+            var vars = parsed && parsed[resolved];
+            if (vars) {
+              Object.keys(vars).forEach(function (k) {
+                document.documentElement.style.setProperty(k, vars[k]);
+              });
+            }
+          }
         } catch (e) {}
       })();
     </script>

@@ -1,5 +1,6 @@
 import { useEffect, useState, type MouseEvent } from "react";
-import { BookOpen, Clock, FileWarning } from "lucide-react";
+import { BookOpen, Clock, FileWarning, Flame } from "lucide-react";
+import { formatDuration } from "../lib/readingStats";
 import type { NoteResponse, ParsedObsidianNote } from "../types";
 
 interface NoteViewProps {
@@ -7,9 +8,11 @@ interface NoteViewProps {
   parsed: ParsedObsidianNote | null;
   loading: boolean;
   error: string | null;
+  noteReadingSeconds: number;
   prevNote: { key: string; name: string } | null;
   nextNote: { key: string; name: string } | null;
   onNavigateNote: (key: string, headingId?: string) => void;
+  onOpenHeatmap: () => void;
 }
 
 function formatDate(iso: string): string {
@@ -36,9 +39,11 @@ export function NoteView({
   parsed,
   loading,
   error,
+  noteReadingSeconds,
   prevNote,
   nextNote,
   onNavigateNote,
+  onOpenHeatmap,
 }: NoteViewProps) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
@@ -147,10 +152,21 @@ export function NoteView({
       <header className="note-header">
         <h1 className="note-title">{displayTitle}</h1>
         <div className="note-meta-row">
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span className="note-meta-item">
             <Clock size={13} />
             更新于 {formatDate(note.uploaded)}
           </span>
+          {noteReadingSeconds > 0 && (
+            <button
+              type="button"
+              className="note-meta-reading-btn"
+              onClick={onOpenHeatmap}
+              title="点击查看阅读时长热力图"
+            >
+              <Flame size={13} />
+              累计阅读 {formatDuration(noteReadingSeconds)}
+            </button>
+          )}
         </div>
 
         {hasFrontmatterCard && (

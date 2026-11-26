@@ -1,4 +1,10 @@
-import type { AuthStatus, NoteResponse, VaultTreeResponse } from "../types";
+import type {
+  AuthStatus,
+  NoteResponse,
+  ReadingDelta,
+  ReadingStatsData,
+  VaultTreeResponse,
+} from "../types";
 
 export class ApiError extends Error {
   status: number;
@@ -64,4 +70,35 @@ export function fetchNoteContent(key: string): Promise<NoteResponse> {
 
 export function buildAssetUrl(key: string): string {
   return `/api/asset?key=${encodeURIComponent(key)}`;
+}
+
+export function fetchReadingStats(): Promise<ReadingStatsData> {
+  return requestJson<ReadingStatsData>("/api/reading-stats");
+}
+
+export function pushReadingDeltas(
+  deltas: ReadingDelta[],
+  options?: { keepalive?: boolean }
+): Promise<ReadingStatsData> {
+  return requestJson<ReadingStatsData>("/api/reading-stats", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ deltas }),
+    keepalive: options?.keepalive,
+  });
+}
+
+export function beaconReadingDeltas(deltas: ReadingDelta[]): boolean {
+  if (typeof navigator === "undefined" || typeof navigator.sendBeacon !== "function") {
+    return false;
+  }
+  if (deltas.length === 0) return true;
+  try {
+    const blob = new Blob([JSON.stringify({ deltas })], {
+      type: "application/json",
+    });
+    return navigator.sendBeacon("/api/reading-stats", blob);
+  } catch {
+    return false;
+  }
 }
