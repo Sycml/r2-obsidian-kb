@@ -57,11 +57,11 @@ export function LoginScreen({ authStatus, onSuccess }: LoginScreenProps) {
       <div className="center-screen">
         <div className="login-card">
           <img
-            src="/icon-192.png"
+            src="/icon-192.png?v=2"
             alt={authStatus.siteTitle}
             className="login-logo"
-            width={56}
-            height={56}
+            width={64}
+            height={64}
           />
           <h1>{authStatus.siteTitle}</h1>
           <p className="login-subtitle">
@@ -85,11 +85,11 @@ export function LoginScreen({ authStatus, onSuccess }: LoginScreenProps) {
     <div className="center-screen">
       <div className="login-card">
         <img
-          src="/icon-192.png"
+          src="/icon-192.png?v=2"
           alt={authStatus.siteTitle}
           className="login-logo"
-          width={56}
-          height={56}
+          width={64}
+          height={64}
         />
         <h1>{authStatus.siteTitle}</h1>
         <p className="login-subtitle">输入私密访问口令以查阅你的 Cloudflare R2 Obsidian 笔记库。</p>

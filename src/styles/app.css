@@ -65,8 +65,8 @@ button {
 }
 
 .login-logo {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   display: block;
   object-fit: contain;
   margin-bottom: 18px;
@@ -210,8 +210,8 @@ button {
 }
 
 .brand-icon {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   display: block;
   object-fit: contain;
   flex-shrink: 0;
