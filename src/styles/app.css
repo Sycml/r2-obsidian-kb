@@ -1374,6 +1374,17 @@ details.callout[open] > summary.callout-title::after {
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
 
+.popover-sync-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
 /* ==================== Header Reading Button & Note Meta ==================== */
 .header-reading-btn {
   height: 34px;

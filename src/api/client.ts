@@ -3,6 +3,7 @@ import type {
   NoteResponse,
   ReadingDelta,
   ReadingStatsData,
+  UserPreferencesData,
   VaultTreeResponse,
 } from "../types";
 
@@ -101,4 +102,16 @@ export function beaconReadingDeltas(deltas: ReadingDelta[]): boolean {
   } catch {
     return false;
   }
+}
+
+export function fetchUserPreferences(): Promise<UserPreferencesData> {
+  return requestJson<UserPreferencesData>("/api/preferences");
+}
+
+export function saveUserPreferences(accent: string): Promise<UserPreferencesData> {
+  return requestJson<UserPreferencesData>("/api/preferences", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accent }),
+  });
 }

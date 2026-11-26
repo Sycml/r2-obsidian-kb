@@ -84,3 +84,10 @@ export interface ReadingDelta {
 
 export type ReadingSyncStatus = "synced" | "syncing" | "local";
 
+export interface UserPreferencesData {
+  version: 1;
+  updatedAt: string | null;
+  accent: string;
+}
+
+

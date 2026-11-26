@@ -24,6 +24,7 @@ export const ACCENT_PRESETS: readonly AccentPreset[] = [
 const THEME_STORAGE_KEY = "r2-kb-theme";
 const ACCENT_STORAGE_KEY = "r2-kb-accent";
 const ACCENT_VARS_CACHE_KEY = "r2-kb-accent-vars";
+const ACCENT_PENDING_SYNC_KEY = "r2-kb-accent-pending-sync";
 
 interface RgbColor {
   r: number;
@@ -330,4 +331,24 @@ export function cycleThemePreference(current: ThemePreference): ThemePreference 
   if (current === "system") return "light";
   if (current === "light") return "dark";
   return "system";
+}
+
+export function hasPendingAccentSync(): boolean {
+  try {
+    return localStorage.getItem(ACCENT_PENDING_SYNC_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function setPendingAccentSync(pending: boolean): void {
+  try {
+    if (pending) {
+      localStorage.setItem(ACCENT_PENDING_SYNC_KEY, "1");
+    } else {
+      localStorage.removeItem(ACCENT_PENDING_SYNC_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
 }

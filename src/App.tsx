@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ApiError,
   fetchAuthStatus,
   fetchNoteContent,
+  fetchUserPreferences,
   fetchVaultTree,
   logoutSession,
+  saveUserPreferences,
 } from "./api/client";
 import { HeaderBar } from "./components/HeaderBar";
 import { LoginScreen } from "./components/LoginScreen";
@@ -17,12 +19,21 @@ import { renderObsidianNote } from "./lib/obsidian";
 import { formatLocalDateKey, getNoteReadingSeconds } from "./lib/readingStats";
 import {
   applyThemePreference,
+  DEFAULT_ACCENT_ID,
   getSavedAccentPreference,
   getSavedThemePreference,
+  hasPendingAccentSync,
+  setPendingAccentSync,
   type AccentPreference,
   type ThemePreference,
 } from "./lib/theme";
-import type { AuthStatus, NoteResponse, TreeNode, VaultTreeResponse } from "./types";
+import type {
+  AuthStatus,
+  NoteResponse,
+  ReadingSyncStatus,
+  TreeNode,
+  VaultTreeResponse,
+} from "./types";
 
 function flattenTreeNotes(nodes: TreeNode[]): Array<{ key: string; name: string }> {
   const result: Array<{ key: string; name: string }> = [];
@@ -82,6 +93,15 @@ export function App() {
 
   const [themePref, setThemePref] = useState<ThemePreference>(() => getSavedThemePreference());
   const [accentPref, setAccentPref] = useState<AccentPreference>(() => getSavedAccentPreference());
+  const [accentSyncStatus, setAccentSyncStatus] = useState<ReadingSyncStatus>("local");
+
+  const accentPrefRef = useRef<AccentPreference>(accentPref);
+  const accentSaveTimerRef = useRef<number | null>(null);
+  const accentSaveSeqRef = useRef<number>(0);
+  const authenticatedRef = useRef<boolean>(false);
+
+  accentPrefRef.current = accentPref;
+  authenticatedRef.current = Boolean(authStatus?.authenticated);
 
   // Sync theme preference, accent color & system theme listener
   useEffect(() => {
@@ -92,6 +112,79 @@ export function App() {
     mql.addEventListener("change", listener);
     return () => mql.removeEventListener("change", listener);
   }, [themePref, accentPref]);
+
+  // Cleanup pending debounced accent sync timer on unmount
+  useEffect(() => {
+    return () => {
+      if (accentSaveTimerRef.current !== null) {
+        window.clearTimeout(accentSaveTimerRef.current);
+      }
+    };
+  }, []);
+
+  const persistAccentToR2 = useCallback(async (nextAccent: AccentPreference) => {
+    if (!authenticatedRef.current) return;
+    const seq = ++accentSaveSeqRef.current;
+    setAccentSyncStatus("syncing");
+    try {
+      await saveUserPreferences(nextAccent);
+      if (seq === accentSaveSeqRef.current) {
+        setPendingAccentSync(false);
+        setAccentSyncStatus("synced");
+      }
+    } catch {
+      if (seq === accentSaveSeqRef.current) {
+        setPendingAccentSync(true);
+        setAccentSyncStatus("local");
+      }
+    }
+  }, []);
+
+  const syncPreferencesFromR2 = useCallback(async () => {
+    if (!authenticatedRef.current) return;
+    try {
+      const remote = await fetchUserPreferences();
+      const localAccent = accentPrefRef.current;
+      const shouldPushLocal =
+        hasPendingAccentSync() || (remote.updatedAt === null && localAccent !== DEFAULT_ACCENT_ID);
+
+      if (shouldPushLocal) {
+        await persistAccentToR2(localAccent);
+        return;
+      }
+
+      if (remote.updatedAt !== null && remote.accent) {
+        setAccentPref(remote.accent);
+        setPendingAccentSync(false);
+      }
+      setAccentSyncStatus("synced");
+    } catch {
+      setAccentSyncStatus("local");
+    }
+  }, [persistAccentToR2]);
+
+  const handleChangeAccent = useCallback(
+    (nextAccent: AccentPreference) => {
+      setAccentPref(nextAccent);
+      setPendingAccentSync(true);
+
+      if (accentSaveTimerRef.current !== null) {
+        window.clearTimeout(accentSaveTimerRef.current);
+      }
+
+      if (!authenticatedRef.current) {
+        setAccentSyncStatus("local");
+        return;
+      }
+
+      setAccentSyncStatus("syncing");
+      accentSaveTimerRef.current = window.setTimeout(() => {
+        accentSaveTimerRef.current = null;
+        void persistAccentToR2(nextAccent);
+      }, 350);
+    },
+    [persistAccentToR2]
+  );
 
   // Check authentication status
   const checkAuth = useCallback(async () => {
@@ -144,8 +237,9 @@ export function App() {
   useEffect(() => {
     if (authStatus?.authenticated) {
       loadVault();
+      void syncPreferencesFromR2();
     }
-  }, [authStatus?.authenticated, loadVault]);
+  }, [authStatus?.authenticated, loadVault, syncPreferencesFromR2]);
 
   // Load active note content from R2
   const loadNote = useCallback(async (key: string) => {
@@ -249,6 +343,7 @@ export function App() {
       loadVault(),
       activeNoteKey ? loadNote(activeNoteKey) : Promise.resolve(),
       refreshStats(),
+      syncPreferencesFromR2(),
     ]);
   };
 
@@ -298,6 +393,7 @@ export function App() {
         authMode={authStatus.authMode}
         themePref={themePref}
         accentPref={accentPref}
+        accentSyncStatus={accentSyncStatus}
         todayReadingSeconds={todayReadingSeconds}
         isActivelyReading={isActivelyReading}
         sidebarOpen={mobileSidebarOpen || !desktopCollapsed}
@@ -313,7 +409,7 @@ export function App() {
         }}
         onRefresh={handleRefresh}
         onChangeTheme={setThemePref}
-        onChangeAccent={setAccentPref}
+        onChangeAccent={handleChangeAccent}
         onLogout={handleLogout}
         onGoHome={() => {
           const homeKey = pickInitialNoteKey(orderedNotes);
