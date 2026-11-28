@@ -75,7 +75,7 @@ export function HeaderBar({
 
         <button type="button" className="brand-btn" onClick={onGoHome} title={siteTitle}>
           <img
-            src="/icon-192.png?v=2"
+            src="/icon-192.png?v=3"
             alt=""
             className="brand-icon"
             width={26}
