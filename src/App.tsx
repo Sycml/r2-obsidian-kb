@@ -297,7 +297,7 @@ export function App() {
 
   // Scroll to heading or top after note renders
   useEffect(() => {
-    if (!parsedNote || !note) return;
+    if (!parsedNote || !note || note.key !== activeNoteKey) return;
     const title = parsedNote.frontmatter.title || note.key.split("/").pop()?.replace(/\.md$/i, "");
     document.title = title ? `${title} · ${vault?.siteTitle || "知识库"}` : vault?.siteTitle || "知识库";
 
@@ -310,7 +310,7 @@ export function App() {
     } else {
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }
-  }, [parsedNote, note, pendingHeading, vault?.siteTitle]);
+  }, [parsedNote, note, activeNoteKey, pendingHeading, vault?.siteTitle]);
 
   const navigateToNote = useCallback(
     (key: string, headingId?: string) => {
@@ -319,8 +319,12 @@ export function App() {
       url.hash = headingId ? encodeURIComponent(headingId) : "";
       window.history.pushState(null, "", url.toString());
 
-      if (key === activeNoteKey && headingId) {
-        document.getElementById(headingId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (key === activeNoteKey) {
+        if (headingId) {
+          document.getElementById(headingId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
         return;
       }
       setPendingHeading(headingId || null);

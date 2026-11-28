@@ -115,11 +115,70 @@ updated: 2026-11-25
   });
 
   it("sanitizes malicious HTML/XSS payloads", () => {
-    const md = `正常内容 <script>alert(1)</script> <img src=x onerror="alert(2)"> <iframe src="https://evil.example"></iframe>`;
+    const md = `正常内容 <script>alert(1)</script> <img src=x onerror="alert(2)"> <iframe src="https://evil.example"></iframe> [xss](javascript:alert(1))`;
     const parsed = renderObsidianNote(md, "欢迎使用.md", mockFiles);
 
     expect(parsed.html).not.toContain("<script");
     expect(parsed.html).not.toContain("onerror");
     expect(parsed.html).not.toContain("https://evil.example");
+    expect(parsed.html).not.toContain("javascript:");
+  });
+
+  it("resolves standard Markdown relative and vault note links with headings", () => {
+    const vaultFiles: VaultFileEntry[] = [
+      ...mockFiles,
+      {
+        key: "VLA/LeRobot-SmolVLA-finetuning-notes.md",
+        name: "LeRobot-SmolVLA-finetuning-notes.md",
+        basename: "LeRobot-SmolVLA-finetuning-notes",
+        ext: "md",
+        size: 1024,
+        etag: "4",
+        uploaded: "2026-11-26T00:00:00Z",
+        isNote: true,
+      },
+      {
+        key: "LLM/notes.md",
+        name: "notes.md",
+        basename: "notes",
+        ext: "md",
+        size: 512,
+        etag: "5",
+        uploaded: "2026-11-26T00:00:00Z",
+        isNote: true,
+      },
+    ];
+
+    const md = [
+      "[LeRobot-SmolVLA-finetuning-notes](../VLA/LeRobot-SmolVLA-finetuning-notes.md)",
+      "[带锚点](../VLA/LeRobot-SmolVLA-finetuning-notes.md#Training%20Setup)",
+      "[URL编码中文](../%E6%8A%80%E6%9C%AF/Cloudflare%20R2.md#%E9%83%A8%E7%BD%B2%E6%AD%A5%E9%AA%A4)",
+      "[同页锚点](#本地章节)",
+      "[附件](../附件/architecture.svg)",
+      "[外链](https://example.com/docs)",
+      "[缺失](../VLA/not-found.md)",
+    ].join("\n\n");
+
+    const parsed = renderObsidianNote(md, "LLM/notes.md", vaultFiles);
+
+    expect(parsed.html).toContain(
+      'href="?note=VLA%2FLeRobot-SmolVLA-finetuning-notes.md" class="obs-wikilink" data-note-key="VLA/LeRobot-SmolVLA-finetuning-notes.md"'
+    );
+    expect(parsed.html).toContain(
+      'href="?note=VLA%2FLeRobot-SmolVLA-finetuning-notes.md#training-setup" class="obs-wikilink" data-note-key="VLA/LeRobot-SmolVLA-finetuning-notes.md" data-note-heading="training-setup"'
+    );
+    expect(parsed.html).toContain('data-note-key="技术/Cloudflare R2.md"');
+    expect(parsed.html).toContain('data-note-heading="部署步骤"');
+    expect(parsed.html).toContain(
+      'href="#本地章节" class="obs-wikilink" data-note-key="LLM/notes.md" data-note-heading="本地章节"'
+    );
+    expect(parsed.html).toContain(
+      'href="/api/asset?key=%E9%99%84%E4%BB%B6%2Farchitecture.svg"'
+    );
+    expect(parsed.html).toContain(
+      'href="https://example.com/docs" target="_blank" rel="noopener noreferrer"'
+    );
+    expect(parsed.html).toContain('class="obs-wikilink is-unresolved"');
   });
 });
+

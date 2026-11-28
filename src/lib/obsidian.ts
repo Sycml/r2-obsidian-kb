@@ -243,26 +243,32 @@ function pickClosestEntry(candidates: VaultFileEntry[], currentNoteKey: string):
   return best;
 }
 
+function safeDecodeURIComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 export function resolveVaultTarget(
   rawTarget: string,
   currentNoteKey: string,
   index: VaultIndex,
   preferNote: boolean
 ): VaultFileEntry | null {
-  let target = rawTarget.trim();
+  let target = safeDecodeURIComponent(rawTarget.trim());
   if (!target) return null;
 
-  try {
-    target = decodeURIComponent(target);
-  } catch {
-    // Keep original string if not valid URI encoding
-  }
+  target = target.replace(/\\/g, "/");
+  const isRootAnchored = target.startsWith("/");
+  target = target.replace(/^\/+/, "");
+  if (!target) return null;
 
-  target = target.replace(/\\/g, "/").replace(/^\/+/, "");
   const currentDir = getDirname(currentNoteKey);
 
-  // 1. Relative path resolution (./ or ../)
-  if (target.startsWith("./") || target.startsWith("../") || currentDir) {
+  // 1. Relative path resolution (./ or ../) or relative to current note's directory
+  if (!isRootAnchored && (target.startsWith("./") || target.startsWith("../") || currentDir)) {
     const rel = resolveRelativePath(currentDir, target).toLowerCase();
     const exactRel = index.byExactKey.get(rel) || index.byKeyWithoutExt.get(rel);
     if (exactRel) return exactRel;
@@ -392,14 +398,17 @@ function transformTextSegment(
 
   // 4. Inline Obsidian tags: #tag or #parent/child (not headings, not hex colors, not URL fragments)
   out = out.replace(
-    /(^|[\s(（【\[])#([\p{L}\p{N}_-]+(?:\/[\p{L}\p{N}_-]+)*)/gu,
-    (full, prefix: string, tag: string) => {
+    /(<[^>]+>|\]\([^)\n]*\))|(^|[\s(（【\[])#([\p{L}\p{N}_-]+(?:\/[\p{L}\p{N}_-]+)*)/gu,
+    (full, ignored: string | undefined, prefix: string | undefined, tag: string | undefined) => {
+      if (ignored || !tag) {
+        return full;
+      }
       // Skip pure numeric or hex color-like tokens (#123, #fff, #1a2b3c)
       if (/^[0-9]+$/.test(tag) || /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(tag)) {
         return full;
       }
       inlineTags.add(tag);
-      return `${prefix}<span class="obs-tag">#${escapeHtml(tag)}</span>`;
+      return `${prefix || ""}<span class="obs-tag">#${escapeHtml(tag)}</span>`;
     }
   );
 
@@ -506,6 +515,58 @@ export function renderObsidianNote(
         const safeAlt = escapeAttr(text || "");
         const titleAttr = title ? ` title="${escapeAttr(title)}"` : "";
         return `<img src="${safeSrc}" alt="${safeAlt}"${titleAttr} loading="lazy" class="obs-img" data-lightbox-src="${safeSrc}" />`;
+      },
+
+      link({ href, title, tokens }) {
+        const innerHtml = this.parser.parseInline(tokens);
+        const titleAttr = title ? ` title="${escapeAttr(title)}"` : "";
+        const trimmedHref = (href || "").trim();
+
+        if (!trimmedHref) {
+          return `<a${titleAttr}>${innerHtml}</a>`;
+        }
+
+        // External URLs / explicit URI schemes / protocol-relative URLs
+        if (/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(trimmedHref) || trimmedHref.startsWith("//")) {
+          const isWebExternal = /^https?:\/\//i.test(trimmedHref) || trimmedHref.startsWith("//");
+          const extraAttrs = isWebExternal ? ' target="_blank" rel="noopener noreferrer"' : "";
+          return `<a href="${escapeAttr(trimmedHref)}"${titleAttr}${extraAttrs}>${innerHtml}</a>`;
+        }
+
+        // Already-resolved internal app links
+        if (trimmedHref.startsWith("/api/") || trimmedHref.startsWith("?")) {
+          return `<a href="${escapeAttr(trimmedHref)}"${titleAttr}>${innerHtml}</a>`;
+        }
+
+        const hashIdx = trimmedHref.indexOf("#");
+        const rawTarget = (hashIdx >= 0 ? trimmedHref.slice(0, hashIdx) : trimmedHref).trim();
+        const rawHeading = hashIdx >= 0 ? trimmedHref.slice(hashIdx + 1).trim() : "";
+        const decodedHeading = rawHeading ? safeDecodeURIComponent(rawHeading) : "";
+        const headingSlug = decodedHeading ? slugifyHeading(decodedHeading) : "";
+
+        // Same-note heading link: [text](#heading)
+        if (!rawTarget && headingSlug) {
+          return `<a href="#${escapeAttr(headingSlug)}" class="obs-wikilink" data-note-key="${escapeAttr(currentNoteKey)}" data-note-heading="${escapeAttr(headingSlug)}"${titleAttr}>${innerHtml}</a>`;
+        }
+
+        if (!rawTarget) {
+          return `<a href="#"${titleAttr}>${innerHtml}</a>`;
+        }
+
+        const resolved = resolveVaultTarget(rawTarget, currentNoteKey, index, true);
+        if (!resolved) {
+          const decodedTarget = safeDecodeURIComponent(rawTarget);
+          const fallbackTitle = title || `未找到笔记：${decodedTarget}`;
+          return `<span class="obs-wikilink is-unresolved" title="${escapeAttr(fallbackTitle)}">${innerHtml}</span>`;
+        }
+
+        if (resolved.isNote) {
+          const noteHref = `?note=${encodeURIComponent(resolved.key)}${headingSlug ? `#${encodeURIComponent(headingSlug)}` : ""}`;
+          return `<a href="${escapeAttr(noteHref)}" class="obs-wikilink" data-note-key="${escapeAttr(resolved.key)}"${headingSlug ? ` data-note-heading="${escapeAttr(headingSlug)}"` : ""}${titleAttr}>${innerHtml}</a>`;
+        }
+
+        const assetUrl = `/api/asset?key=${encodeURIComponent(resolved.key)}`;
+        return `<a href="${escapeAttr(assetUrl)}" target="_blank" rel="noopener noreferrer" class="obs-wikilink"${titleAttr}>${innerHtml}</a>`;
       },
 
       blockquote({ tokens }) {
