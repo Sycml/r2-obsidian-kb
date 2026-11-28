@@ -13,6 +13,7 @@ interface NoteViewProps {
   nextNote: { key: string; name: string } | null;
   onNavigateNote: (key: string, headingId?: string) => void;
   onOpenHeatmap: () => void;
+  onOpenSidebar?: () => void;
 }
 
 function formatDate(iso: string): string {
@@ -44,6 +45,7 @@ export function NoteView({
   nextNote,
   onNavigateNote,
   onOpenHeatmap,
+  onOpenSidebar,
 }: NoteViewProps) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
@@ -123,6 +125,11 @@ export function NoteView({
         <BookOpen size={40} color="var(--text-muted)" />
         <h2>欢迎使用你的 R2 知识库</h2>
         <p>从左侧目录树选择一篇笔记开始阅读。将新笔记同步到 R2 存储桶后，点击右上角刷新即可实时查阅。</p>
+        {onOpenSidebar && (
+          <button type="button" className="primary-btn empty-state-btn" onClick={onOpenSidebar}>
+            浏览笔记目录
+          </button>
+        )}
       </div>
     );
   }

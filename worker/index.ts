@@ -97,8 +97,12 @@ app.post("/api/auth/login", async (c) => {
   });
 });
 
-// Logout
+// Logout (only available in password auth mode)
 app.post("/api/auth/logout", (c) => {
+  const mode = resolveAuthMode(c.env);
+  if (mode !== "password") {
+    return c.json({ error: "当前认证模式不支持退出登录。" }, 400);
+  }
   clearSessionCookie(c);
   return c.json({ ok: true });
 });

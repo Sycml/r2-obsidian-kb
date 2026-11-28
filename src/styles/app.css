@@ -1131,6 +1131,15 @@ details.callout[open] > summary.callout-title::after {
   line-height: 1.6;
 }
 
+.empty-state-btn {
+  margin-top: 18px;
+  display: none;
+}
+
+.sidebar.is-collapsed ~ .main-content .empty-state-btn {
+  display: inline-flex;
+}
+
 /* ==================== Theme Accent & Appearance Popover ==================== */
 .appearance-wrap {
   position: relative;
@@ -1385,40 +1394,7 @@ details.callout[open] > summary.callout-title::after {
   color: var(--text-muted);
 }
 
-/* ==================== Header Reading Button & Note Meta ==================== */
-.header-reading-btn {
-  height: 34px;
-  padding: 0 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
-  font-weight: 550;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
-}
-
-.header-reading-btn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-  border-color: var(--border-strong);
-}
-
-.header-reading-btn.has-progress {
-  background: var(--bg-active);
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
-  color: var(--text-accent);
-}
-
-.reading-flame-icon {
-  flex-shrink: 0;
-}
-
+/* ==================== Reading Live Dot & Note Meta ==================== */
 .reading-live-dot {
   width: 6px;
   height: 6px;
@@ -1564,7 +1540,7 @@ details.callout[open] > summary.callout-title::after {
 }
 
 .heatmap-modal {
-  width: min(880px, 100%);
+  width: min(920px, 100%);
   max-height: min(88dvh, 760px);
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
@@ -1699,7 +1675,8 @@ details.callout[open] > summary.callout-title::after {
 
 .heatmap-board {
   position: relative;
-  padding: 20px 20px 14px;
+  min-width: 0;
+  padding: 18px 20px 14px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
@@ -1726,13 +1703,17 @@ details.callout[open] > summary.callout-title::after {
 }
 
 .heatmap-scroller {
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding-bottom: 6px;
 }
 
 .heatmap-canvas {
+  --heatmap-cell-size: 12px;
   width: max-content;
   margin: 0 auto;
+  padding: 4px 14px 4px 4px;
 }
 
 .heatmap-months-row {
@@ -1751,6 +1732,7 @@ details.callout[open] > summary.callout-title::after {
   column-gap: 3px;
   height: 16px;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .heatmap-month-label {
@@ -1774,8 +1756,8 @@ details.callout[open] > summary.callout-title::after {
 }
 
 .heatmap-weekday-label {
-  height: 13px;
-  line-height: 13px;
+  height: var(--heatmap-cell-size);
+  line-height: var(--heatmap-cell-size);
   font-size: 0.69rem;
   color: var(--text-muted);
   text-align: right;
@@ -1784,6 +1766,7 @@ details.callout[open] > summary.callout-title::after {
 .heatmap-weeks-row {
   display: flex;
   gap: 3px;
+  flex-shrink: 0;
 }
 
 .heatmap-week-col {
@@ -1793,8 +1776,8 @@ details.callout[open] > summary.callout-title::after {
 }
 
 .heatmap-cell {
-  width: 13px;
-  height: 13px;
+  width: var(--heatmap-cell-size);
+  height: var(--heatmap-cell-size);
   padding: 0;
   border: none;
   border-radius: 3px;
@@ -2023,25 +2006,6 @@ details.callout[open] > summary.callout-title::after {
     gap: 2px;
   }
 
-  .header-reading-btn {
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    justify-content: center;
-    border-color: transparent;
-    background: transparent;
-  }
-
-  .header-reading-btn.has-progress {
-    background: var(--bg-active);
-    border-color: transparent;
-  }
-
-  .header-reading-time,
-  .header-reading-btn .reading-live-dot {
-    display: none;
-  }
-
   .main-content {
     padding: 18px 16px calc(56px + env(safe-area-inset-bottom));
   }
@@ -2095,5 +2059,9 @@ details.callout[open] > summary.callout-title::after {
 
   .day-note-bar-wrap {
     display: none;
+  }
+
+  .empty-state-btn {
+    display: inline-flex;
   }
 }
