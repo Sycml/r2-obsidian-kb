@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import app from "./index";
 import {
   createSessionToken,
   resolveAuthMode,
@@ -37,5 +38,28 @@ describe("worker/auth utilities", () => {
     // Different secret
     const otherEnv = { ...mockEnv, SESSION_SECRET: "another-completely-different-secret-key" } as Env;
     expect(await verifySessionToken(otherEnv, token)).toBe(false);
+  });
+
+  it("allows /api/auth/logout only in password mode and disables it for cloudflare-access", async () => {
+    const passwordRes = await app.request(
+      "https://example.com/api/auth/logout",
+      { method: "POST" },
+      mockEnv
+    );
+    expect(passwordRes.status).toBe(200);
+
+    const accessRes = await app.request(
+      "https://example.com/api/auth/logout",
+      { method: "POST" },
+      { ...mockEnv, AUTH_MODE: "cloudflare-access" } as Env
+    );
+    expect(accessRes.status).toBe(400);
+
+    const noneRes = await app.request(
+      "https://example.com/api/auth/logout",
+      { method: "POST" },
+      { ...mockEnv, AUTH_MODE: "none" } as Env
+    );
+    expect(noneRes.status).toBe(400);
   });
 });

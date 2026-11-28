@@ -1,5 +1,4 @@
 import {
-  Flame,
   ListTree,
   LogOut,
   Menu,
@@ -8,7 +7,6 @@ import {
 } from "lucide-react";
 import type { AuthMode, ReadingSyncStatus } from "../types";
 import type { AccentPreference, ThemePreference } from "../lib/theme";
-import { formatCompactDuration, formatDuration } from "../lib/readingStats";
 import { AppearancePopover } from "./AppearancePopover";
 
 interface HeaderBarProps {
@@ -20,16 +18,13 @@ interface HeaderBarProps {
   themePref: ThemePreference;
   accentPref: AccentPreference;
   accentSyncStatus: ReadingSyncStatus;
-  todayReadingSeconds: number;
-  isActivelyReading: boolean;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   onOpenTocSheet: () => void;
-  onOpenHeatmap: () => void;
   onRefresh: () => void;
   onChangeTheme: (pref: ThemePreference) => void;
   onChangeAccent: (accent: AccentPreference) => void;
-  onLogout: () => void;
+  onLogout?: () => void;
   onGoHome: () => void;
 }
 
@@ -42,23 +37,15 @@ export function HeaderBar({
   themePref,
   accentPref,
   accentSyncStatus,
-  todayReadingSeconds,
-  isActivelyReading,
   sidebarOpen,
   onToggleSidebar,
   onOpenTocSheet,
-  onOpenHeatmap,
   onRefresh,
   onChangeTheme,
   onChangeAccent,
   onLogout,
   onGoHome,
 }: HeaderBarProps) {
-  const heatmapTitle =
-    todayReadingSeconds > 0
-      ? `阅读时长热力图（今日已读 ${formatDuration(todayReadingSeconds)}）`
-      : "阅读时长热力图";
-
   return (
     <header className="header-bar">
       <div className="header-left">
@@ -104,20 +91,6 @@ export function HeaderBar({
           </button>
         )}
 
-        <button
-          type="button"
-          className={`header-reading-btn ${todayReadingSeconds > 0 ? "has-progress" : ""}`}
-          onClick={onOpenHeatmap}
-          title={heatmapTitle}
-          aria-label={heatmapTitle}
-        >
-          <Flame size={17} className="reading-flame-icon" />
-          <span className="header-reading-time">
-            {todayReadingSeconds > 0 ? formatCompactDuration(todayReadingSeconds) : "热力图"}
-          </span>
-          {isActivelyReading && <span className="reading-live-dot" aria-hidden="true" />}
-        </button>
-
         <AppearancePopover
           themePref={themePref}
           accentPref={accentPref}
@@ -137,7 +110,7 @@ export function HeaderBar({
           <RefreshCw size={18} className={refreshing ? "spin" : ""} />
         </button>
 
-        {authMode === "password" && (
+        {authMode === "password" && onLogout && (
           <button
             type="button"
             className="icon-btn"

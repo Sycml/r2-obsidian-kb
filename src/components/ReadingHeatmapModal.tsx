@@ -76,11 +76,15 @@ export function ReadingHeatmapModal({
   // Auto-scroll heatmap to the right (most recent weeks) when opened or switching to rolling
   useEffect(() => {
     if (!open) return;
-    requestAnimationFrame(() => {
+    const rafId = requestAnimationFrame(() => {
       if (scrollerRef.current && range === "rolling") {
-        scrollerRef.current.scrollLeft = scrollerRef.current.scrollWidth;
+        scrollerRef.current.scrollLeft = Math.max(
+          0,
+          scrollerRef.current.scrollWidth - scrollerRef.current.clientWidth
+        );
       }
     });
+    return () => cancelAnimationFrame(rafId);
   }, [open, range]);
 
   // Keep selected date within the active range
@@ -255,7 +259,7 @@ export function ReadingHeatmapModal({
                 <div
                   className="heatmap-months-track"
                   style={{
-                    gridTemplateColumns: `repeat(${grid.weeks.length}, 13px)`,
+                    gridTemplateColumns: `repeat(${grid.weeks.length}, var(--heatmap-cell-size, 12px))`,
                   }}
                 >
                   {grid.monthLabels.map((m) => (

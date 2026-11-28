@@ -16,7 +16,7 @@ import { Sidebar } from "./components/Sidebar";
 import { TocPanel } from "./components/TocPanel";
 import { useReadingTracker } from "./hooks/useReadingTracker";
 import { renderObsidianNote } from "./lib/obsidian";
-import { formatLocalDateKey, getNoteReadingSeconds } from "./lib/readingStats";
+import { getNoteReadingSeconds } from "./lib/readingStats";
 import {
   applyThemePreference,
   DEFAULT_ACCENT_ID,
@@ -60,15 +60,6 @@ function getNoteFromLocation(): { key: string | null; heading: string | null } {
     }
   }
   return { key, heading };
-}
-
-function pickInitialNoteKey(orderedNotes: Array<{ key: string; name: string }>): string | null {
-  if (orderedNotes.length === 0) return null;
-  const preferredNames = ["index", "readme", "home", "首页", "目录", "欢迎", "欢迎使用"];
-  const preferred = orderedNotes.find((n) =>
-    preferredNames.includes(n.name.trim().toLowerCase())
-  );
-  return preferred ? preferred.key : orderedNotes[0].key;
 }
 
 export function App() {
@@ -219,10 +210,7 @@ export function App() {
       document.title = data.siteTitle || "我的知识库";
 
       const notes = flattenTreeNotes(data.tree);
-      setActiveNoteKey((prev) => {
-        if (prev && notes.some((n) => n.key === prev)) return prev;
-        return pickInitialNoteKey(notes);
-      });
+      setActiveNoteKey((prev) => (prev && notes.some((n) => n.key === prev) ? prev : null));
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setAuthStatus((prev) => (prev ? { ...prev, authenticated: false } : prev));
@@ -260,19 +248,23 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (authStatus?.authenticated && activeNoteKey) {
-      loadNote(activeNoteKey);
+    if (!authStatus?.authenticated) return;
+    if (!activeNoteKey) {
+      setNote(null);
+      setNoteError(null);
+      setNoteLoading(false);
+      document.title = vault?.siteTitle || authStatus.siteTitle || "我的知识库";
+      return;
     }
-  }, [authStatus?.authenticated, activeNoteKey, loadNote]);
+    loadNote(activeNoteKey);
+  }, [authStatus?.authenticated, authStatus?.siteTitle, activeNoteKey, loadNote, vault?.siteTitle]);
 
   // Sync browser Back/Forward buttons
   useEffect(() => {
     const onPopState = () => {
       const { key, heading } = getNoteFromLocation();
-      if (key) {
-        setActiveNoteKey(key);
-        setPendingHeading(heading);
-      }
+      setActiveNoteKey(key);
+      setPendingHeading(heading);
     };
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -352,6 +344,7 @@ export function App() {
   };
 
   const handleLogout = async () => {
+    if (authStatus?.authMode !== "password") return;
     await logoutSession();
     setVault(null);
     setNote(null);
@@ -383,8 +376,6 @@ export function App() {
     parsedNote?.frontmatter.title ||
     (activeNoteKey ? activeNoteKey.split("/").pop()?.replace(/\.md$/i, "") || "" : "");
 
-  const todayKey = formatLocalDateKey(new Date());
-  const todayReadingSeconds = readingStats.days[todayKey]?.seconds || 0;
   const currentNoteReading = getNoteReadingSeconds(readingStats, activeNoteKey);
 
   return (
@@ -398,26 +389,25 @@ export function App() {
         themePref={themePref}
         accentPref={accentPref}
         accentSyncStatus={accentSyncStatus}
-        todayReadingSeconds={todayReadingSeconds}
-        isActivelyReading={isActivelyReading}
         sidebarOpen={mobileSidebarOpen || !desktopCollapsed}
         onToggleSidebar={handleToggleSidebar}
         onOpenTocSheet={() => {
           setMobileTocOpen(true);
           setMobileSidebarOpen(false);
         }}
-        onOpenHeatmap={() => {
-          setHeatmapOpen(true);
-          setMobileSidebarOpen(false);
-          setMobileTocOpen(false);
-        }}
         onRefresh={handleRefresh}
         onChangeTheme={setThemePref}
         onChangeAccent={handleChangeAccent}
-        onLogout={handleLogout}
+        onLogout={authStatus.authMode === "password" ? handleLogout : undefined}
         onGoHome={() => {
-          const homeKey = pickInitialNoteKey(orderedNotes);
-          if (homeKey) navigateToNote(homeKey);
+          const url = new URL(window.location.href);
+          if (url.searchParams.has("note") || url.hash) {
+            url.searchParams.delete("note");
+            url.hash = "";
+            window.history.pushState(null, "", url.toString());
+          }
+          setPendingHeading(null);
+          setActiveNoteKey(null);
         }}
       />
 
@@ -459,6 +449,14 @@ export function App() {
             nextNote={nextNote}
             onNavigateNote={navigateToNote}
             onOpenHeatmap={() => setHeatmapOpen(true)}
+            onOpenSidebar={() => {
+              if (window.innerWidth <= 820) {
+                setMobileSidebarOpen(true);
+                setMobileTocOpen(false);
+              } else {
+                setDesktopCollapsed(false);
+              }
+            }}
           />
         </main>
 
