@@ -57,7 +57,7 @@ export function LoginScreen({ authStatus, onSuccess }: LoginScreenProps) {
       <div className="center-screen">
         <div className="login-card">
           <img
-            src="/icon-192.png?v=2"
+            src="/icon-192.png?v=3"
             alt={authStatus.siteTitle}
             className="login-logo"
             width={64}
@@ -85,7 +85,7 @@ export function LoginScreen({ authStatus, onSuccess }: LoginScreenProps) {
     <div className="center-screen">
       <div className="login-card">
         <img
-          src="/icon-192.png?v=2"
+          src="/icon-192.png?v=3"
           alt={authStatus.siteTitle}
           className="login-logo"
           width={64}
